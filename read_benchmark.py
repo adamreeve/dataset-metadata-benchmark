@@ -5,11 +5,24 @@ import time
 import pyarrow.dataset as ds
 import pyarrow as pa
 import pyarrow.compute as pc
+from pyarrow import fs
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-m', '--use-metadata', action='store_true')
+parser.add_argument('--s3', action='store_true')
 args = parser.parse_args()
+
+if args.s3:
+    file_system = fs.S3FileSystem(
+            endpoint_override="localhost:9000",
+            scheme="http",
+            access_key="minioadmin",
+            secret_key="minioadmin")
+    dataset_path = Path("dataset")
+else:
+    file_system = None
+    dataset_path = Path("./dataset")
 
 dataset_path = Path("./dataset")
 pformat = ds.ParquetFileFormat()
@@ -30,18 +43,18 @@ t0 = time.perf_counter()
 
 if args.use_metadata:
     dataset = ds.parquet_dataset(
-        dataset_path / "_metadata",
+        (dataset_path / "_metadata").as_posix(),
         format=pformat,
         schema=schema,
-        partitioning=partitioning
-    )
+        partitioning=partitioning,
+        filesystem=file_system)
 else:
     dataset = ds.dataset(
-        dataset_path,
+        dataset_path.as_posix(),
         format=pformat,
         schema=schema,
-        partitioning=partitioning
-    )
+        partitioning=partitioning,
+        filesystem=file_system)
 
 t1 = time.perf_counter()
 

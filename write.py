@@ -1,15 +1,31 @@
+import argparse
 from pathlib import Path
 
 import pyarrow.parquet as pq
 import pyarrow.dataset as ds
 import pyarrow as pa
+from pyarrow import fs
 import numpy as np
 
 
-dataset_path = Path("./dataset")
-dataset_path.mkdir(exist_ok=False)
+parser = argparse.ArgumentParser()
+parser.add_argument('--s3', action="store_true")
+args = parser.parse_args()
 
-num_years = 5
+if args.s3:
+    file_system = fs.S3FileSystem(
+            endpoint_override="localhost:9000",
+            scheme="http",
+            allow_bucket_creation=True,
+            access_key="minioadmin",
+            secret_key="minioadmin")
+    dataset_path = Path("dataset")
+else:
+    file_system = None
+    dataset_path = Path("./dataset")
+    dataset_path.mkdir(exist_ok=False)
+
+num_years = 10
 rows_per_batch = 10_000
 num_leaf_directory_files = 100
 files_per_x = 2  # Number of leaf files per directory that contain data for each unique x value
@@ -39,7 +55,8 @@ for write_num in range(num_leaf_directory_files):
     # format, so appends new data to the dataset.
     pq.write_to_dataset(
         table,
-        dataset_path,
+        dataset_path.as_posix(),
+        filesystem=file_system,
         partitioning=ds.partitioning(
             schema=pa.schema([
                 pa.field("year", pa.int16())
@@ -57,6 +74,6 @@ pq.write_metadata(
         for field in schema
         if field.name != "year"
     ),
-    dataset_path / "_metadata",
-    metadata_collector
-)
+    (dataset_path / "_metadata").as_posix(),
+    metadata_collector,
+    filesystem=file_system)

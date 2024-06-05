@@ -8,6 +8,9 @@ pyarrow = "*"
 pandas = "*"
 pyright = "*"
 polars = "*"
+pyiceberg = {extras = ["hive", "s3fs"], version = "*"}
+setuptools = "*"
+sqlalchemy = "*"
 
 [dev-packages]
 

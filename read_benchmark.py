@@ -58,9 +58,11 @@ else:
 
 t1 = time.perf_counter()
 
-result = dataset.filter(filter_expr).to_table().to_pandas().sort_values(['year', 'y'])
+result = dataset.filter(filter_expr).to_table()
 
 t2 = time.perf_counter()
 
 print(f"Time to open dataset = {1000 * (t1 - t0):.3f} ms")
 print(f"Time to read dataset = {1000 * (t2 - t1):.3f} ms")
+
+print(f"Query returned {len(result)} rows")
